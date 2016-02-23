@@ -9,9 +9,12 @@ import sys
 # Note: try on a subset before
 indir="../ALLGEVS/xls"
 
-mode="sqlite3"
-mode="mysql"
+if len(sys.argv)>1:
+    mode=sys.argv[1]
+else:
+    mode="sqlite3"
 
+    
 sql_ins11 = '''INSERT INTO thresholds (gev, vendor, category, year, metric_name, type,
                                        journal, code, metric, thra, IRl) VALUES
                                       (?, ?, ?, ?, ?, ?,
@@ -26,9 +29,11 @@ sql_ins16 = '''INSERT INTO thresholds (gev, vendor, category, year, metric_name,
 if mode == "sqlite3":
     outdb='vqr.sqlite3'
     conn = sqlite3.connect(outdb)
+    sql_auto_increment = ""
 elif mode == "mysql":
     sql_ins11 = str.replace(sql_ins11,'?','%s')
     sql_ins16 = str.replace(sql_ins16,'?','%s')
+    sql_auto_increment = "AUTO_INCREMENT"
     conn=mdb.connect('localhost','root','','vqr')
     conn.autocommit(True)
 else:
@@ -37,10 +42,10 @@ else:
     
 c = conn.cursor()
 c.execute('DROP TABLE IF EXISTS thresholds')
-c.execute('''CREATE TABLE thresholds (gev TEXT, vendor TEXT, category TEXT, year TEXT, metric_name TEXT, type TEXT,
+c.execute('''CREATE TABLE thresholds (gev TEXT, vendor TEXT, category TEXT, year INTEGER, metric_name TEXT, type TEXT,
                                   journal TEXT, code TEXT, metric REAL, thra TEXT, thrb TEXT,
                                   thrc TEXT, thrd TEXT, thre TEXT, irh TEXT, irl TEXT,
-                                  id INT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id) ) ''' )
+                                  id INTEGER NOT NULL PRIMARY KEY %s ) ''' % sql_auto_increment )
 
 xlslist=glob.glob(indir+'/*.xls')
 errfile=open("errors.log", "w")
