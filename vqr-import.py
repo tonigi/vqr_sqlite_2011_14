@@ -10,12 +10,16 @@ import sys
 indir="../ALLGEVS/xls"
 
 mode="sqlite3"
+mode="mysql"
 
-
-sql_ins11 = '''INSERT INTO thresholds values (?, ?, ?, ?, ?, ?,
-                                                     ?, ?, ?, ?, NULL,
-                                                     NULL, NULL, NULL, ?, NULL) '''
-sql_ins16 = '''INSERT INTO thresholds values (?, ?, ?, ?, ?, ?,
+sql_ins11 = '''INSERT INTO thresholds (gev, vendor, category, year, metric_name, type,
+                                       journal, code, metric, thra, IRl) VALUES
+                                      (?, ?, ?, ?, ?, ?,
+                                       ?, ?, ?, ?, ? ) '''
+sql_ins16 = '''INSERT INTO thresholds (gev, vendor, category, year, metric_name, type,
+                                       journal, code, metric, thra, thrb,
+                                       thrc, thrd, thre, IRh, IRl) VALUES
+                                      (?, ?, ?, ?, ?, ?,
                                                          ?, ?, ?, ?, ?,
                                                          ?, ?, ?, ?, ?) '''
 
@@ -23,18 +27,20 @@ if mode == "sqlite3":
     outdb='vqr.sqlite3'
     conn = sqlite3.connect(outdb)
 elif mode == "mysql":
-    conn=mdb.connect('localhost','root','','vqr')
     sql_ins11 = str.replace(sql_ins11,'?','%s')
     sql_ins16 = str.replace(sql_ins16,'?','%s')
+    conn=mdb.connect('localhost','root','','vqr')
+    conn.autocommit(True)
 else:
     raise Error("Wrong mode")
 
     
 c = conn.cursor()
 c.execute('DROP TABLE IF EXISTS thresholds')
-c.execute('''CREATE TABLE thresholds (GEV text, VENDOR text, CATEGORY text, YEAR text, METRIC_NAME text, TYPE text,
-                                  JOURNAL text, CODE text, METRIC real, THRA text, THRB text,
-                                  THRC text, THRD text, THRE text, IRh TEXT, IRl TEXT ) ''' )
+c.execute('''CREATE TABLE thresholds (gev TEXT, vendor TEXT, category TEXT, year TEXT, metric_name TEXT, type TEXT,
+                                  journal TEXT, code TEXT, metric REAL, thra TEXT, thrb TEXT,
+                                  thrc TEXT, thrd TEXT, thre TEXT, irh TEXT, irl TEXT,
+                                  id INT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id) ) ''' )
 
 xlslist=glob.glob(indir+'/*.xls')
 errfile=open("errors.log", "w")
@@ -54,6 +60,7 @@ for x in xlslist:
     spl=re.search(r"^(.+?)-(.+?)-(.+)-(anno.+?)-(.+?)-(.+?)$",fn)
     if spl:
         gev,vendor,category,year,metric_name,type=spl.groups()
+        year=re.sub(r"anno","",year)
     else:
         errfile.write("ERROR: file name %s does not parse\n" % fn)
         continue
