@@ -5,14 +5,16 @@ import os.path
 import re
 import sys
 
-indir="/home/toni/work/anvur/ALLGEVS/xls"
+# Note: try on a subset before
+indir="xls"
+outdb='vqr.sqlite3'
 
-conn = sqlite3.connect('vqr.db')
+conn = sqlite3.connect(outdb)
 
 c = conn.cursor()
 
-c.execute('DROP TABLE IF EXISTS soglie')
-c.execute('''CREATE TABLE soglie (GEV text, VENDOR text, CATEGORY text, YEAR text, METRIC_NAME text, TYPE text,
+c.execute('DROP TABLE IF EXISTS thresholds')
+c.execute('''CREATE TABLE thresholds (GEV text, VENDOR text, CATEGORY text, YEAR text, METRIC_NAME text, TYPE text,
                                   JOURNAL text, CODE text, METRIC real, THRA text, THRB text,
                                   THRC text, THRD text, THRE text, IRh TEXT, IRl TEXT ) ''' )
 
@@ -32,7 +34,7 @@ for x in xlslist:
     try:
         gev,vendor,category,year,metric_name,type=fn.split('-')
     except:
-        errfile.write("ERROR: file name %s does not parse" % fn)
+        errfile.write("ERROR: file name %s does not parse\n" % fn)
         continue
 
     wb=xlrd.open_workbook(x)
@@ -40,19 +42,25 @@ for x in xlslist:
 
     for i in range(1,ws.nrows):
         row=ws.row_values(i)
-        if len(row) != 10:
-            errfile.write("ERROR: file %s has %d columns, not the expected 10" % (x,len(row)))
-            break
-
         rowl = [ gev,vendor,category,year,metric_name,type ] + row
-        c.executemany( '''INSERT INTO soglie values (?, ?, ?, ?, ?, ?,
-                                                     ?, ?, ?, ?, ?,
-                                                     ?, ?, ?, ?, ?) ''', [rowl] )
+        if len(row) == 5:
+            c.executemany( '''INSERT INTO thresholds values (?, ?, ?, ?, ?, ?,
+                                                     ?, ?, ?, ?, NULL,
+                                                     NULL, NULL, NULL, ?, NULL) ''', [rowl] )
+        elif len(row) == 10:
+            c.executemany( '''INSERT INTO thresholds values (?, ?, ?, ?, ?, ?,
+                                                         ?, ?, ?, ?, ?,
+                                                         ?, ?, ?, ?, ?) ''', [rowl] )
+        else:
+            errfile.write("ERROR: file %s has %d columns, not the expected 5 or 10" % (x,len(row)))
+
     done=done+1
-    print( "Done %d/%d \r" % (done,len(xlslist)), end="", flush=True)
+    print( "Done %d/%d files \r" % (done,len(xlslist)), end="", flush=True)
     sys.stdout.flush()
 
 conn.commit()
 conn.close()
+
+print("Done, see database "+outdb)
 
 errfile.close()
