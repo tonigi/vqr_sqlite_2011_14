@@ -26,10 +26,12 @@ for x in xlslist:
     fn=os.path.basename(x)
     fn,ext=os.path.splitext(fn)
 
+    # Remove a variety of variations
     fn=re.sub(r"- Copia",'',fn)
     fn=re.sub(r"- Copia",'',fn)  # Repetita juvant
     fn=re.sub(r"Copia di ",'',fn) 
     fn=re.sub(r"scopus-[0-9][0-9][0-9][0-9]-(.+?)-",'scopus-\\1-',fn)
+    fn=str.strip(fn)
 
     spl=re.search(r"^(.+?)-(.+?)-(.+)-(anno.+?)-(.+?)-(.+?)$",fn)
     if spl:
@@ -62,6 +64,6 @@ for x in xlslist:
 conn.commit()
 conn.close()
 
-print("Done, see database "+outdb)
+print("\nDone, see database "+outdb)
 
 errfile.close()
