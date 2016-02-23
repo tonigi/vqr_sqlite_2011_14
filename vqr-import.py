@@ -6,7 +6,7 @@ import re
 import sys
 
 # Note: try on a subset before
-indir="xls"
+indir="../ALLGEVS/xls"
 outdb='vqr.sqlite3'
 
 conn = sqlite3.connect(outdb)
@@ -27,13 +27,14 @@ for x in xlslist:
     fn,ext=os.path.splitext(fn)
 
     fn=re.sub(r"- Copia",'',fn)
-    fn=re.sub(r"- Copia",'',fn)  # Sometimes twice
-    fn=re.sub(r"Copia di ",'',fn)  # Sometimes twice
+    fn=re.sub(r"- Copia",'',fn)  # Repetita juvant
+    fn=re.sub(r"Copia di ",'',fn) 
     fn=re.sub(r"scopus-[0-9][0-9][0-9][0-9]-(.+?)-",'scopus-\\1-',fn)
 
-    try:
-        gev,vendor,category,year,metric_name,type=fn.split('-')
-    except:
+    spl=re.search(r"^(.+?)-(.+?)-(.+)-(anno.+?)-(.+?)-(.+?)$",fn)
+    if spl:
+        gev,vendor,category,year,metric_name,type=spl.groups()
+    else:
         errfile.write("ERROR: file name %s does not parse\n" % fn)
         continue
 
