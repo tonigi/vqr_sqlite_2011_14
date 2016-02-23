@@ -8,26 +8,24 @@ import sys
 
 # Note: try on a subset before
 indir="../ALLGEVS/xls"
-mode="sqlite3" # or sqlite3
-mode="mysql"
+
+mode="sqlite3"
+
+
+sql_ins11 = '''INSERT INTO thresholds values (?, ?, ?, ?, ?, ?,
+                                                     ?, ?, ?, ?, NULL,
+                                                     NULL, NULL, NULL, ?, NULL) '''
+sql_ins16 = '''INSERT INTO thresholds values (?, ?, ?, ?, ?, ?,
+                                                         ?, ?, ?, ?, ?,
+                                                         ?, ?, ?, ?, ?) '''
 
 if mode == "sqlite3":
     outdb='vqr.sqlite3'
     conn = sqlite3.connect(outdb)
-    sql_ins11 = '''INSERT INTO thresholds values (?, ?, ?, ?, ?, ?,
-                                                     ?, ?, ?, ?, NULL,
-                                                     NULL, NULL, NULL, ?, NULL) '''
-    sql_ins16='''INSERT INTO thresholds values (?, ?, ?, ?, ?, ?,
-                                                         ?, ?, ?, ?, ?,
-                                                         ?, ?, ?, ?, ?) '''
 elif mode == "mysql":
     conn=mdb.connect('localhost','root','','vqr')
-    sql_ins11 = '''INSERT INTO thresholds values (%s, %s, %s, %s, %s, %s,
-                                                     %s, %s, %s, %s, NULL,
-                                                     NULL, NULL, NULL, %s, NULL) '''
-    sql_ins16='''INSERT INTO thresholds values (%s, %s, %s, %s, %s, %s,
-                                                         %s, %s, %s, %s, %s,
-                                                         %s, %s, %s, %s, %s) '''
+    sql_ins11 = str.replace(sql_ins11,'?','%s')
+    sql_ins16 = str.replace(sql_ins16,'?','%s')
 else:
     raise Error("Wrong mode")
 
