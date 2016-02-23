@@ -1,3 +1,4 @@
+import MySQLdb as mdb
 import sqlite3
 import xlrd
 import glob
@@ -7,12 +8,31 @@ import sys
 
 # Note: try on a subset before
 indir="../ALLGEVS/xls"
-outdb='vqr.sqlite3'
+mode="sqlite3" # or sqlite3
+mode="mysql"
 
-conn = sqlite3.connect(outdb)
+if mode == "sqlite3":
+    outdb='vqr.sqlite3'
+    conn = sqlite3.connect(outdb)
+    sql_ins11 = '''INSERT INTO thresholds values (?, ?, ?, ?, ?, ?,
+                                                     ?, ?, ?, ?, NULL,
+                                                     NULL, NULL, NULL, ?, NULL) '''
+    sql_ins16='''INSERT INTO thresholds values (?, ?, ?, ?, ?, ?,
+                                                         ?, ?, ?, ?, ?,
+                                                         ?, ?, ?, ?, ?) '''
+elif mode == "mysql":
+    conn=mdb.connect('localhost','root','','vqr')
+    sql_ins11 = '''INSERT INTO thresholds values (%s, %s, %s, %s, %s, %s,
+                                                     %s, %s, %s, %s, NULL,
+                                                     NULL, NULL, NULL, %s, NULL) '''
+    sql_ins16='''INSERT INTO thresholds values (%s, %s, %s, %s, %s, %s,
+                                                         %s, %s, %s, %s, %s,
+                                                         %s, %s, %s, %s, %s) '''
+else:
+    raise Error("Wrong mode")
 
+    
 c = conn.cursor()
-
 c.execute('DROP TABLE IF EXISTS thresholds')
 c.execute('''CREATE TABLE thresholds (GEV text, VENDOR text, CATEGORY text, YEAR text, METRIC_NAME text, TYPE text,
                                   JOURNAL text, CODE text, METRIC real, THRA text, THRB text,
@@ -46,14 +66,10 @@ for x in xlslist:
     for i in range(1,ws.nrows):
         row=ws.row_values(i)
         rowl = [ gev,vendor,category,year,metric_name,type ] + row
-        if len(row) == 5:
-            c.executemany( '''INSERT INTO thresholds values (?, ?, ?, ?, ?, ?,
-                                                     ?, ?, ?, ?, NULL,
-                                                     NULL, NULL, NULL, ?, NULL) ''', [rowl] )
-        elif len(row) == 10:
-            c.executemany( '''INSERT INTO thresholds values (?, ?, ?, ?, ?, ?,
-                                                         ?, ?, ?, ?, ?,
-                                                         ?, ?, ?, ?, ?) ''', [rowl] )
+        if len(rowl) == 11:
+            c.executemany( sql_ins11, [rowl] )
+        elif len(rowl) == 16:
+            c.executemany( sql_ins16, [rowl] )
         else:
             errfile.write("ERROR: file %s has %d columns, not the expected 5 or 10" % (x,len(row)))
 
@@ -64,6 +80,6 @@ for x in xlslist:
 conn.commit()
 conn.close()
 
-print("\nDone, see database "+outdb)
+print("\nDone.")
 
 errfile.close()
