@@ -1,5 +1,3 @@
-import MySQLdb as mdb
-import sqlite3
 import xlrd
 import glob
 import os.path
@@ -9,11 +7,11 @@ import sys
 # Note: try on a subset before
 indir="../ALLGEVS/xls"
 
-if len(sys.argv)>1:
-    mode=sys.argv[1]
-else:
-    mode="sqlite3"
+if len(sys.argv)==1:
+    raise Exception("Needs one argument, mysql or sqlite3")
 
+
+mode=sys.argv[1]
     
 sql_ins11 = '''INSERT INTO thresholds (gev, vendor, category, year, metric_name, type,
                                        journal, code, metric, thra, IRl) VALUES
@@ -27,32 +25,24 @@ sql_ins16 = '''INSERT INTO thresholds (gev, vendor, category, year, metric_name,
                                                          ?, ?, ?, ?, ?) '''
 
 if mode == "sqlite3":
+    import sqlite3
     outdb='vqr.sqlite3'
     conn = sqlite3.connect(outdb)
     sql_auto_increment = ""
 elif mode == "mysql":
+    import MySQLdb as mdb
     sql_ins11 = str.replace(sql_ins11,'?','%s')
     sql_ins16 = str.replace(sql_ins16,'?','%s')
     sql_auto_increment = "AUTO_INCREMENT"
     conn=mdb.connect('localhost','root','','vqr')
     conn.autocommit(True)
 else:
-    raise Error("Wrong mode")
+    raise Exception("Wrong mode")
 
-    
-c = conn.cursor()
-c.execute('DROP TABLE IF EXISTS thresholds')
-c.execute('''CREATE TABLE thresholds (gev TEXT, vendor TEXT, category TEXT, year INTEGER, metric_name TEXT, type TEXT,
-                                  journal TEXT, code TEXT, metric REAL, thra TEXT, thrb TEXT,
-                                  thrc TEXT, thrd TEXT, thre TEXT, irh TEXT, irl TEXT,
-                                  id INTEGER NOT NULL PRIMARY KEY %s ) ''' % sql_auto_increment )
 
-xlslist=glob.glob(indir+'/*.xls')
-errfile=open("errors.log", "w")
-done=0
-
-for x in xlslist:
-    fn=os.path.basename(x)
+# a/b/cde.xls -> cde , plus other fixes
+def fixup_filename(fn):
+    fn=os.path.basename(fn)
     fn,ext=os.path.splitext(fn)
 
     # Remove a variety of variations
@@ -61,7 +51,25 @@ for x in xlslist:
     fn=re.sub(r"Copia di ",'',fn) 
     fn=re.sub(r"scopus-[0-9][0-9][0-9][0-9]-(.+?)-",'scopus-\\1-',fn)
     fn=str.strip(fn)
+    return fn
 
+
+# Open db
+c = conn.cursor()
+c.execute('DROP TABLE IF EXISTS thresholds')
+c.execute('''CREATE TABLE thresholds (gev TEXT, vendor TEXT, category TEXT, year INTEGER, metric_name TEXT, type TEXT,
+                                  journal TEXT, code TEXT, metric REAL, thra TEXT, thrb TEXT,
+                                  thrc TEXT, thrd TEXT, thre TEXT, irh TEXT, irl TEXT,
+                                  id INTEGER NOT NULL PRIMARY KEY %s ) ''' % sql_auto_increment )
+
+# List of files
+xlslist=glob.glob(indir+'/*.xls')
+errfile=open("errors.log", "w")
+done=0
+
+
+for x in xlslist:
+    fn=fixup_filename(x)
     spl=re.search(r"^(.+?)-(.+?)-(.+)-(anno.+?)-(.+?)-(.+?)$",fn)
     if spl:
         gev,vendor,category,year,metric_name,type=spl.groups()
