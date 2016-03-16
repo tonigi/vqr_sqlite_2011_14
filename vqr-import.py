@@ -35,7 +35,7 @@ elif mode == "mysql":
     sql_ins16 = str.replace(sql_ins16,'?','%s')
     sql_auto_increment = "AUTO_INCREMENT"
     conn=mdb.connect('localhost','root','','vqr')
-    conn.autocommit(True)
+    conn.autocommit(False)
 else:
     raise Exception("Wrong mode")
 
@@ -49,7 +49,7 @@ def fixup_filename(fn):
     fn=re.sub(r"- Copia",'',fn)
     fn=re.sub(r"- Copia",'',fn)  # Repetita juvant
     fn=re.sub(r"Copia di ",'',fn) 
-    fn=re.sub(r"scopus-[0-9][0-9][0-9][0-9]-(.+?)-",'scopus-\\1-',fn)
+#     fn=re.sub(r"scopus-[0-9][0-9][0-9][0-9]-(.+?)-",'scopus-\\1-',fn)
     fn=str.strip(fn)
     return fn
 
@@ -61,6 +61,7 @@ c.execute('''CREATE TABLE thresholds (gev TEXT, vendor TEXT, category TEXT, year
                                   journal TEXT, code TEXT, metric REAL, thra TEXT, thrb TEXT,
                                   thrc TEXT, thrd TEXT, thre TEXT, irh TEXT, irl TEXT,
                                   id INTEGER NOT NULL PRIMARY KEY %s ) ''' % sql_auto_increment )
+# c.execute("START TRANSACTION")
 
 # List of files
 xlslist=glob.glob(indir+'/*.xls')
